@@ -12,6 +12,8 @@ struct AVFrame;
 struct AVStream;
 struct AVFormatContext;
 
+class VideoItem;
+
 class MainWindow : public QMainWindow
 {
 		Q_OBJECT
@@ -27,6 +29,7 @@ class MainWindow : public QMainWindow
 
 	private:
 		Ui::MainWindow *m_ui;
+		VideoItem *m_videoItem;
 		bool m_stop;
 };
 

@@ -1,4 +1,4 @@
-QT += core gui opengl
+QT += core gui opengl multimediawidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -9,10 +9,12 @@ DEFINES += __STDC_CONSTANT_MACROS
 
 SOURCES += main.cpp\
 			  main_window.cpp \
-    av_gl_widget.cpp
+    av_gl_widget.cpp \
+    video_item.cpp
 
 HEADERS += main_window.h \
-    av_gl_widget.h
+    av_gl_widget.h \
+    video_item.h
 
 FORMS += main_window.ui
 

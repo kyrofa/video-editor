@@ -34,7 +34,7 @@
      </layout>
     </item>
     <item>
-     <widget class="AVGLWidget" name="widget" native="true"/>
+     <widget class="QGraphicsView" name="graphicsView"/>
     </item>
    </layout>
   </widget>
@@ -59,14 +59,6 @@
   <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <customwidgets>
-  <customwidget>
-   <class>AVGLWidget</class>
-   <extends>QWidget</extends>
-   <header>av_gl_widget.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
