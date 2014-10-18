@@ -101,53 +101,39 @@ void VideoItem::stop()
 
 bool VideoItem::present(const QVideoFrame &frame)
 {
-	qDebug() << "Here!";
 	if (!m_framePainted)
 	{
-		qDebug() << __LINE__;
 		if (!QAbstractVideoSurface::isActive())
 		{
-			qDebug() << __LINE__;
 			setError(StoppedError);
 		}
-		qDebug() << __LINE__;
 	}
 	else
 	{
-		qDebug() << __LINE__;
 		if (frame.isValid())
 		{
-			qDebug() << __LINE__;
 			QVideoSurfaceFormat currentFormat = surfaceFormat();
 
-			qDebug() << __LINE__;
 			if (frame.pixelFormat() != currentFormat.pixelFormat() ||
 			    frame.size() != currentFormat.frameSize())
 			{
-				qDebug() << __LINE__;
 				QVideoSurfaceFormat format(frame.size(), frame.pixelFormat());
 
-				qDebug() << __LINE__;
 				if (!start(format))
 				{
-					qDebug() << __LINE__;
 					return false;
 				}
 			}
 
-			qDebug() << __LINE__;
 			m_currentFrame = frame;
 			m_framePainted = false;
 
-			qDebug() << __LINE__;
 			update();
 
-			qDebug() << __LINE__;
 			return true;
 		}
 	}
 
-	qDebug() << __LINE__;
 	stop();
 	return false;
 }
@@ -195,6 +181,5 @@ bool VideoItem::present(const AVFrame &frame)
 
 	QVideoFrame videoFrame(image);
 
-	qDebug() << "Converted, and presenting...";
 	return present(videoFrame);
 }

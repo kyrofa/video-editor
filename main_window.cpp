@@ -8,6 +8,8 @@ extern "C"
 }
 
 #include <QDebug>
+#include <QEventLoop>
+#include <QTimer>
 #include <QGLWidget>
 
 #include "video_item.h"
@@ -121,10 +123,10 @@ extern "C"
 //}
 
 MainWindow::MainWindow(QWidget *parent) :
-	QMainWindow(parent),
-	m_ui(new Ui::MainWindow),
-	m_videoItem(new VideoItem),
-	m_stop(false)
+   QMainWindow(parent),
+   m_ui(new Ui::MainWindow),
+   m_videoItem(new VideoItem),
+   m_stop(false)
 {
 	m_ui->setupUi(this);
 
@@ -177,7 +179,7 @@ void MainWindow::on_goButton_clicked()
 	// Find video stream (and associated codec)
 	AVCodec *videoCodec = NULL;
 	int videoCodecIndex = av_find_best_stream(formatContext, AVMEDIA_TYPE_VIDEO, -1,
-															-1, &videoCodec, 0);
+	                                          -1, &videoCodec, 0);
 	if (videoCodecIndex < 0)
 	{
 		char buffer[1024];
@@ -205,7 +207,7 @@ void MainWindow::on_goButton_clicked()
 	// Find audio stream (and associated codec)
 	AVCodec *audioCodec = NULL;
 	int audioCodecIndex = av_find_best_stream(formatContext, AVMEDIA_TYPE_AUDIO, -1,
-															-1, &audioCodec, 0);
+	                                          -1, &audioCodec, 0);
 	if (audioCodecIndex < 0)
 	{
 		char buffer[1024];
@@ -317,7 +319,7 @@ void MainWindow::on_goButton_clicked()
 				// Decode video frame
 				int gotFrame = 0;
 				int processedLength = avcodec_decode_video2(videoCodecContext, frame,
-																		  &gotFrame, &packetToSend);
+				                                            &gotFrame, &packetToSend);
 				if (processedLength < 0)
 				{
 					av_free_packet(&packet);
@@ -331,8 +333,13 @@ void MainWindow::on_goButton_clicked()
 				// Did we get a video frame?
 				if (gotFrame)
 				{
-					qDebug() << "Got frame!";
 					m_videoItem->present(*frame);
+
+					const int msToWait = videoCodecContext->ticks_per_frame * 1000 * videoCodecContext->time_base.num / videoCodecContext->time_base.den;
+
+					QEventLoop loop;
+					QTimer::singleShot(msToWait, &loop, SLOT(quit()));
+					loop.exec();
 				}
 
 				av_free_packet(&packetToSend);
