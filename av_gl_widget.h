@@ -13,12 +13,15 @@ extern "C"
 #include <QGLWidget>
 #include <QOpenGLFunctions>
 
+class QLabel;
+
 class AVGLWidget : public QGLWidget, protected QOpenGLFunctions
 {
 	Q_OBJECT
 
 	public:
 		explicit AVGLWidget(QWidget *parent = 0);
+		void showImage(const AVFrame &frame);
 		void setFrame(const AVFrame &frame);
 
 	protected:
@@ -27,6 +30,7 @@ class AVGLWidget : public QGLWidget, protected QOpenGLFunctions
 		virtual void paintGL();
 
 	private:
+		QLabel *m_label;
 		AVPicture m_picture;
 		GLsizei m_width;
 		GLsizei m_height;

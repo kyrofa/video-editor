@@ -137,9 +137,10 @@ void MainWindow::on_goButton_clicked()
 {
 	QString filename("/home/krf/Desktop/VIDEO0055.mp4");
 
-	AVFormatContext *formatContext = NULL;
+	QSharedPointer<AVFormatContext> formatContext(avformat_alloc_context(), avformat_free_context);
+	AVFormatContext *formatContextPtr = formatContext.data();
 
-	int returnCode = avformat_open_input(&formatContext, filename.toUtf8().constData(), NULL, NULL);
+	int returnCode = avformat_open_input(&formatContextPtr, filename.toUtf8().constData(), NULL, NULL);
 	if (returnCode < 0)
 	{
 		char buffer[1024];
@@ -149,23 +150,23 @@ void MainWindow::on_goButton_clicked()
 		return;
 	}
 
-	returnCode = avformat_find_stream_info(formatContext, NULL);
+	returnCode = avformat_find_stream_info(formatContext.data(), NULL);
 	if (returnCode < 0)
 	{
 		char buffer[1024];
 		av_strerror(returnCode, buffer, 1024);
 		qCritical("Unable to find stream information: %s", buffer);
 
-		avformat_close_input(&formatContext);
+		avformat_close_input(&formatContextPtr);
 		return;
 	}
 
 	// Print information about the input file
-	av_dump_format(formatContext, 0, filename.toUtf8().constData(), 0);
+	av_dump_format(formatContext.data(), 0, filename.toUtf8().constData(), 0);
 
 	// Find video stream (and associated codec)
 	AVCodec *videoCodec = NULL;
-	int videoCodecIndex = av_find_best_stream(formatContext, AVMEDIA_TYPE_VIDEO, -1,
+	int videoCodecIndex = av_find_best_stream(formatContext.data(), AVMEDIA_TYPE_VIDEO, -1,
 															-1, &videoCodec, 0);
 	if (videoCodecIndex < 0)
 	{
@@ -173,7 +174,7 @@ void MainWindow::on_goButton_clicked()
 		av_strerror(videoCodecIndex, buffer, 1024);
 		qCritical("Unable to find video stream: %s", buffer);
 
-		avformat_close_input(&formatContext);
+		avformat_close_input(&formatContextPtr);
 		return;
 	}
 
@@ -187,13 +188,13 @@ void MainWindow::on_goButton_clicked()
 		av_strerror(returnCode, buffer, 1024);
 		qCritical("Unable to open video codec: %s", buffer);
 
-		avformat_close_input(&formatContext);
+		avformat_close_input(&formatContextPtr);
 		return;
 	}
 
 	// Find audio stream (and associated codec)
 	AVCodec *audioCodec = NULL;
-	int audioCodecIndex = av_find_best_stream(formatContext, AVMEDIA_TYPE_AUDIO, -1,
+	int audioCodecIndex = av_find_best_stream(formatContext.data(), AVMEDIA_TYPE_AUDIO, -1,
 															-1, &audioCodec, 0);
 	if (audioCodecIndex < 0)
 	{
@@ -201,7 +202,7 @@ void MainWindow::on_goButton_clicked()
 		av_strerror(audioCodecIndex, buffer, 1024);
 		qCritical("Unable to find audio stream: %s", buffer);
 
-		avformat_close_input(&formatContext);
+		avformat_close_input(&formatContextPtr);
 		return;
 	}
 
@@ -215,33 +216,116 @@ void MainWindow::on_goButton_clicked()
 		av_strerror(returnCode, buffer, 1024);
 		qCritical("Unable to open audio codec: %s", buffer);
 
-		avformat_close_input(&formatContext);
+		avformat_close_input(&formatContextPtr);
 		return;
 	}
 
+	//	AVPacket packet;
+	//	av_init_packet(&packet);
+	//	packet.data = NULL;
+
+	//	// Read frames
+	//	AVFrame *frame = avcodec_alloc_frame();
+	//	size_t offsetInData = 0;
+	//	while (!m_stop)
+	//	{
+	//		qDebug() << offsetInData << packet.size;
+	//		qDebug() << __LINE__;
+	//		if (offsetInData >= packet.size)
+	//		{
+	//			qDebug() << __LINE__;
+	//			if (av_read_frame(formatContext, &packet) < 0)
+	//			{
+	//				qDebug() << __LINE__;
+	//				break;
+	//			}
+	//			qDebug() << __LINE__;
+	//		}
+
+	//		qDebug() << __LINE__;
+	//		// Is this a packet from the video stream?
+	//		if (packet.stream_index == videoCodecIndex)
+	//		{
+	//			qDebug() << __LINE__;
+	//			AVPacket packetToSend;
+	//			packetToSend.data = packet.data + offsetInData;
+	//			packetToSend.size = packet.size - offsetInData;
+
+	//			qDebug() << __LINE__;
+	//			// sending data to libavcodec
+	//			int isFrameAvailable = 0;
+	//			const int processedLength = avcodec_decode_video2(videoCodecContext, frame, &isFrameAvailable, &packetToSend);
+	//			if (processedLength < 0)
+	//			{
+	//				qDebug() << __LINE__;
+	//				av_free_packet(&packet);
+	//				avformat_close_input(&formatContext);
+	//				qCritical("Unable to decode frame from packet!");
+	//				return;
+	//			}
+
+	//			qDebug() << __LINE__;
+	//			offsetInData += processedLength;
+
+	//			// Did we get a video frame?
+	//			qDebug() << __LINE__;
+	//			if (isFrameAvailable)
+	//			{
+	//				//qDebug() << "Got frame!" << ++counter;
+	//				qDebug() << __LINE__;
+	//				m_ui->widget->setFrame(*frame);
+	//			}
+	//			qDebug() << __LINE__;
+	//		}
+
+	//		// Free the packet that was allocated by av_read_frame
+	//		av_free_packet(&packet);
+	//		qDebug() << __LINE__;
+	//		qApp->processEvents();
+	//	}
+
 	AVPacket packet;
-	int gotFrame = 0;
+	av_init_packet(&packet);
+	packet.data = NULL;
+	packet.size = 0;
 
 	// Read frames
 	AVFrame *frame = avcodec_alloc_frame();
-	int counter = 0;
-	while (!m_stop && (av_read_frame(formatContext, &packet) >= 0))
+	while (!m_stop && (av_read_frame(formatContext.data(), &packet) >= 0))
 	{
+		int offsetInData = 0;
 
 		// Is this a packet from the video stream?
 		if (packet.stream_index == videoCodecIndex)
 		{
-			// Decode video frame
-			avcodec_decode_video2(videoCodecContext, frame,
-										 &gotFrame, &packet);
-
-			// Did we get a video frame?
-			if (gotFrame)
+			while (offsetInData < packet.size)
 			{
-				//qDebug() << "Got frame!" << ++counter;
-				m_ui->widget->setFrame(*frame);
-				av_free_packet(&packet);
-				gotFrame = 0;
+				AVPacket packetToSend;
+				av_init_packet(&packetToSend);
+				packetToSend.data = packet.data + offsetInData;
+				packetToSend.size = packet.size - offsetInData;
+				// Decode video frame
+				int gotFrame = 0;
+				int processedLength = avcodec_decode_video2(videoCodecContext, frame,
+																		  &gotFrame, &packetToSend);
+				if (processedLength < 0)
+				{
+					av_free_packet(&packet);
+					avformat_close_input(&formatContextPtr);
+					qCritical("Unable to decode frame from packet!");
+					return;
+				}
+
+				offsetInData += processedLength;
+
+				// Did we get a video frame?
+				if (gotFrame)
+				{
+					//qDebug() << "Got frame!" << ++counter;
+					m_ui->widget->setFrame(*frame);
+				}
+
+				av_free_packet(&packetToSend);
 			}
 		}
 
@@ -252,7 +336,7 @@ void MainWindow::on_goButton_clicked()
 
 	qDebug() << "Done!";
 
-	avformat_close_input(&formatContext);
+	avformat_close_input(&formatContextPtr);
 
 	//	AVOutputFormat *format = av_guess_format(NULL, filename.toUtf8().constData(), NULL);
 	//	if (!format)
