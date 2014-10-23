@@ -126,6 +126,7 @@ MainWindow::MainWindow(QWidget *parent) :
    QMainWindow(parent),
    m_ui(new Ui::MainWindow),
    m_videoItem(new VideoItem),
+   m_lastPresentationTime(0),
    m_stop(false)
 {
 	m_ui->setupUi(this);
@@ -191,7 +192,8 @@ void MainWindow::on_goButton_clicked()
 	}
 
 	qDebug() << "Found video stream index:" << videoCodecIndex;
-	AVCodecContext *videoCodecContext = formatContext->streams[videoCodecIndex]->codec;
+	AVStream *videoStream = formatContext->streams[videoCodecIndex];
+	AVCodecContext *videoCodecContext = videoStream->codec;
 
 	returnCode = avcodec_open2(videoCodecContext, videoCodec, NULL);
 	if (returnCode < 0)
@@ -219,7 +221,8 @@ void MainWindow::on_goButton_clicked()
 	}
 
 	qDebug() << "Found audio stream index:" << audioCodecIndex;
-	AVCodecContext *audioCodecContext = formatContext->streams[audioCodecIndex]->codec;
+	AVStream *audioStream = formatContext->streams[audioCodecIndex];
+	AVCodecContext *audioCodecContext = audioStream->codec;
 
 	returnCode = avcodec_open2(audioCodecContext, audioCodec, NULL);
 	if (returnCode < 0)
@@ -302,7 +305,7 @@ void MainWindow::on_goButton_clicked()
 	packet.size = 0;
 
 	// Read frames
-	AVFrame *frame = avcodec_alloc_frame();
+	QSharedPointer<AVFrame> frame(avcodec_alloc_frame(), av_free);
 	while (!m_stop && (av_read_frame(formatContext, &packet) >= 0))
 	{
 		int offsetInData = 0;
@@ -318,7 +321,7 @@ void MainWindow::on_goButton_clicked()
 				packetToSend.size = packet.size - offsetInData;
 				// Decode video frame
 				int gotFrame = 0;
-				int processedLength = avcodec_decode_video2(videoCodecContext, frame,
+				int processedLength = avcodec_decode_video2(videoCodecContext, frame.data(),
 				                                            &gotFrame, &packetToSend);
 				if (processedLength < 0)
 				{
@@ -335,11 +338,20 @@ void MainWindow::on_goButton_clicked()
 				{
 					m_videoItem->present(*frame);
 
-					const int msToWait = videoCodecContext->ticks_per_frame * 1000 * videoCodecContext->time_base.num / videoCodecContext->time_base.den;
+					if (m_lastPresentationTime > 0)
+					{
+						int msToWait = round(1000 *
+						                     (packet.pts - m_lastPresentationTime) /
+						                     videoCodecContext->ticks_per_frame *
+						                     static_cast<double>(videoCodecContext->time_base.num) /
+						                     static_cast<double>(videoCodecContext->time_base.den));
 
-					QEventLoop loop;
-					QTimer::singleShot(msToWait, &loop, SLOT(quit()));
-					loop.exec();
+						QEventLoop loop;
+						QTimer::singleShot(msToWait, &loop, SLOT(quit()));
+						loop.exec();
+					}
+
+					m_lastPresentationTime = packet.pts;
 				}
 
 				av_free_packet(&packetToSend);

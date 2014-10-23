@@ -143,12 +143,12 @@ bool VideoItem::present(const AVFrame &frame)
 	int width = frame.width;
 	int height = frame.height;
 
-	AVFrame *rgbFrame = avcodec_alloc_frame();
+	QSharedPointer<AVFrame> rgbFrame(avcodec_alloc_frame(), av_free);
 	int numBytes= avpicture_get_size(PIX_FMT_RGB24,
 	                                 width, height);
-	quint8 *buffer = new quint8[numBytes];
+	quint8 buffer[numBytes];
 
-	avpicture_fill((AVPicture*)rgbFrame, buffer, PIX_FMT_RGB24,
+	avpicture_fill((AVPicture*)rgbFrame.data(), buffer, PIX_FMT_RGB24,
 	               width, height);
 
 	int dst_fmt = PIX_FMT_RGB24;

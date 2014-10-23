@@ -30,6 +30,7 @@ class MainWindow : public QMainWindow
 	private:
 		Ui::MainWindow *m_ui;
 		VideoItem *m_videoItem;
+		int64_t m_lastPresentationTime;
 		bool m_stop;
 };
 
