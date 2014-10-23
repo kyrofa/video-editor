@@ -337,6 +337,7 @@ void MainWindow::on_goButton_clicked()
 				if (gotFrame)
 				{
 					m_videoItem->present(*frame);
+					m_ui->graphicsView->fitInView(m_ui->graphicsView->scene()->sceneRect(), Qt::KeepAspectRatio);
 
 					if (m_lastPresentationTime > 0)
 					{

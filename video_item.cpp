@@ -168,7 +168,7 @@ bool VideoItem::present(const AVFrame &frame)
 
 	QImage image(width, height, QImage::Format_RGB32);
 
-	unsigned char *src = static_cast<unsigned char*>(frame.data[0]);
+	unsigned char *src = static_cast<unsigned char*>(rgbFrame->data[0]);
 	for (int y = 0; y < height; y++)
 	{
 		QRgb *scanLine = reinterpret_cast<QRgb*>(image.scanLine(y));
@@ -176,7 +176,7 @@ bool VideoItem::present(const AVFrame &frame)
 		{
 			scanLine[x] = qRgb(src[3*x], src[3*x+1], src[3*x+2]);
 		}
-		src += frame.linesize[0];
+		src += rgbFrame->linesize[0];
 	}
 
 	QVideoFrame videoFrame(image);
