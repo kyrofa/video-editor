@@ -1,6 +1,10 @@
 #ifndef MAIN_WINDOW_H
 #define MAIN_WINDOW_H
 
+#include <QAudioDeviceInfo>
+#include <QAudioOutput>
+#include <QAudioFormat>
+
 #include <QMainWindow>
 
 namespace Ui
@@ -13,6 +17,7 @@ struct AVStream;
 struct AVFormatContext;
 
 class VideoItem;
+class AudioPresenter;
 
 class MainWindow : public QMainWindow
 {
@@ -31,6 +36,13 @@ class MainWindow : public QMainWindow
 		Ui::MainWindow *m_ui;
 		VideoItem *m_videoItem;
 		int64_t m_lastPresentationTime;
+
+		QAudioDeviceInfo m_device;
+		AudioPresenter *m_audioPresenter;
+		QAudioOutput *m_audioOutput;
+		QIODevice *m_output;
+		QAudioFormat m_format;
+
 		bool m_stop;
 };
 

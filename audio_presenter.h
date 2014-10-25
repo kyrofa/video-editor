@@ -14,13 +14,15 @@ class AudioPresenter : public QIODevice
 		~AudioPresenter();
 
 		bool present(const AVFrame &frame);
+		void setChannelCount(int channelCount);
 
 		virtual qint64 readData(char *data, qint64 maxlen);
-		virtual qint64 writeData(char *data, qint64 maxlen);
+		virtual qint64 writeData(const char *data, qint64 maxlen);
 
 		virtual qint64 bytesAvailable();
 
 	private:
+		int m_channelCount;
 		QByteArray m_buffer;
 };
 

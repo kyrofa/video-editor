@@ -4,10 +4,13 @@ extern "C"
 #include <libavcodec/avcodec.h>
 }
 
+#include <QDebug>
+
 #include "audio_presenter.h"
 
 AudioPresenter::AudioPresenter(QObject *parent) :
-   QIODevice(parent)
+   QIODevice(parent),
+   m_channelCount(1)
 {
 	open(QIODevice::ReadOnly);
 }
@@ -17,9 +20,20 @@ AudioPresenter::~AudioPresenter()
 	close();
 }
 
+void AudioPresenter::setChannelCount(int channelCount)
+{
+	m_channelCount = channelCount;
+}
+
 bool AudioPresenter::present(const AVFrame &frame)
 {
-	return false;
+	for (int i = 0; i < m_channelCount; ++i)
+	{
+		m_buffer.append(reinterpret_cast<char*>(frame.extended_data[i]),
+		                frame.linesize[0]);
+	}
+
+	return true;
 }
 
 qint64 AudioPresenter::readData(char *data, qint64 maxlen)
@@ -36,7 +50,7 @@ qint64 AudioPresenter::readData(char *data, qint64 maxlen)
 	return total;
 }
 
-qint64 AudioPresenter::writeData(char *data, qint64 maxlen)
+qint64 AudioPresenter::writeData(const char *data, qint64 maxlen)
 {
 	Q_UNUSED(data);
 	Q_UNUSED(maxlen);
